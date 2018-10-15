@@ -7,14 +7,12 @@ const config = require('../config/config');
 // Sign up new users
 exports.postNewUser = function postNewUser(req, res) {
   const newUser = new User(req.body);
-
   newUser.save().then((user) => {
     const token = jwt.sign({ username: user.username, _id: user._id }, config.jwtSecret, { expiresIn: '1d' });
     res.status(200)
-      .cookie('nToken', token, { httpOnly: true })
-      .json({ message: 'User added!' });
+      .json({ message: 'User added!', token: token, username: user.username });
   }).catch((err) => {
-    res.json(err.message);
+    res.status(400).json(err.message);
   });
 };
 
@@ -36,9 +34,9 @@ exports.checkUsername = function checkUsername(req, res) {
     User.findOne({ username })
       .then((user) => {
         if (user) {
-          res.json({ usernameUnavailable: true }).send();
+          res.status(200).json({ usernameUnavailable: true }).send();
         } else {
-          res.json({ usernameUnavailable: false }).send();
+          res.status(200).json({ usernameUnavailable: false }).send();
         }
       });
   }
@@ -63,7 +61,10 @@ exports.loginUser = function loginUser(req, res) {
       // Create a token
       const token = jwt.sign({ username: user.username, _id: user._id }, config.jwtSecret, { expiresIn: '1d' });
       // Set a cookie and redirect to root
-      return res.status(200).cookie('nToken', token, { httpOnly: true }).send();
+      return res.status(200).json({
+        token,
+        username: user.username,
+      }).send();
     });
   }).catch((err) => {
     res.json(err.message);
